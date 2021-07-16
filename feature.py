@@ -51,8 +51,6 @@ def get_feature_sift(image_path):
     return feature_vectors_images
 
 def get_feature_cnn(image_path):
-    
-    
     feature_vectors_images = None
     return feature_vectors_images
 
@@ -80,7 +78,7 @@ def write_edgestxt(num_pictures,adjmat):
         for i in range(num_pictures):
             for j in range(num_pictures):
                 if adjmat[i][j]==1:
-                    f.write(str(i)+' '+str(j)+'\n')
+                    f.write(str(i)+'\t'+str(j)+'\n')
     f.close()
 
     
