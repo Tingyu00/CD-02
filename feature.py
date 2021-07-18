@@ -23,7 +23,7 @@ def get_image_paths(data_path, categories, num_train_per_cat):
     labels = [None] * (num_categories * num_train_per_cat)
     genres = [None] * (num_categories * num_train_per_cat)
     for i,cat in enumerate(categories):
-        images = glob.glob(os.path.join(data_path, cat, '*.webp'))
+        images = glob.glob(os.path.join(data_path, cat, '*.jpg'))
         for j in range(num_train_per_cat):
             #print(j,len(images),i,len(image_paths))
             image_paths[i * num_train_per_cat + j] = images[j]
@@ -47,10 +47,6 @@ def get_feature_hog(image_paths):
     return feature_vectors_images
 
 def get_feature_sift(image_path):
-    feature_vectors_images = None
-    return feature_vectors_images
-
-def get_feature_cnn(image_path):
     feature_vectors_images = None
     return feature_vectors_images
 
