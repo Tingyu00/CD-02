@@ -1,0 +1,89 @@
+0 person    person0
+
+1bicycle     traffic 1-13
+2car
+3motorbike
+4aeroplane
+5bus
+6rain
+7truck
+8boat
+9traffic light
+10fire hydrant
+11stop sign
+12parking meter
+13bench
+
+14bird     animal 14-23
+15cat
+16dog
+17horse
+18sheep
+19cow
+20elephant
+21bear
+22zebra
+23giraffe
+ 
+24backpack    package 24-28
+25umbrella
+26handbag
+27tie
+28suitcase
+
+29frisbee          sports 29-38
+30skis
+31snowboard
+32sports ball
+33kite
+34baseball bat
+35baseball glove
+36skateboard
+37surfboard
+38tennis racket
+
+39bottle             food and tableware 39-55
+40wine glass
+41cup
+42fork
+43 knife
+44 spoon
+45 bowl 
+46 banana
+47 apple
+48 sandwich
+49 orange
+50 broccoli
+51 carrot
+52 hot dog
+53 pizza
+54 donut
+55 cake
+
+56 chair         furniture 56-61
+57 sofa
+58 pottedplant
+59 bed
+60 diningtable
+61 toilet
+
+62 tvmonitor     tech 62-67
+63 laptop
+64 mouse
+65 remote
+66 keyboard
+67 cell phone
+
+68 microwave    cook 68-72
+69 oven
+70 toaster
+71 sink
+72 refrigerator
+
+73 book           other 73-79
+74 clock
+75 vase
+76 scissors
+77 teddy bear
+78 hair drier
+79 toothbrush

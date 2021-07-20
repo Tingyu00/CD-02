@@ -27,7 +27,7 @@ def get_image_paths(data_path, categories, num_train_per_cat):
         for j in range(num_train_per_cat):
             #print(j,len(images),i,len(image_paths))
             image_paths[i * num_train_per_cat + j] = images[j]
-            labels[i * num_train_per_cat + j] = cat+str(j)
+            labels[i * num_train_per_cat + j] = cat+str(j+1)
             genres[i * num_train_per_cat + j] = os.path.join(cat)
     return (image_paths, labels,genres)
 
