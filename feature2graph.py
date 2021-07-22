@@ -62,13 +62,13 @@ def remove_hard(objects,areas,scores,text):
     index = []
     count = 0
     for i,obj in enumerate(objects):
-        if not obj:
+        if not obj and text[i]==0:
             del objects_new[i-count]
             del areas_new[i-count]
             del scores_new[i-count]
-            np.delete(text_new,i-count)
+            text_new = np.delete(text_new,i-count)
             count += 1
-            index.append(i)
+            index.append(i+1)
             
     return objects_new,areas_new,scores_new,text_new,index
             
@@ -178,7 +178,8 @@ def get_vectors(objects,elements,areas,scores,text):
                 vectors[i][7] += areas[i][index]*scores[i][index]*idf[7]
             else:
                 vectors[i][8] += areas[i][index]*scores[i][index]*idf[8]
-            vectors[i][9] = text[i] * idf[9]
+        vectors[i][9] = text[i] * idf[9]
+            
     return vectors
 
 def normalize(vectors):
