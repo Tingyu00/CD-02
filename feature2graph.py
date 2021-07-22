@@ -9,9 +9,11 @@ import numpy as np
 import copy
 from functools import reduce
 import math
+import glob
 categories=['animal','animation','dance','fashion','food','game','kichiku','knowledge','life','music','tech']
 
 def read_features(num_pictures,cats):
+    # read results of yolov3
     objects = [];areas = [];scores=[]
     for cat in cats:
         pos = categories.index(cat)
@@ -34,7 +36,17 @@ def read_features(num_pictures,cats):
     f1.close()
     f2.close()
     f3.close()
-    return objects,areas,scores
+    
+    # read results of ocr
+    text = np.zeros([num_pictures*len(cats)])
+    for i,cat in enumerate(cats):
+        path = glob.glob('./ocr_result/'+cat+'_prop.txt')
+        with open (path[0],'r') as f:
+            for j in range(num_pictures):
+                text[i*num_pictures + j] = f.readline()
+        f.close()
+    
+    return objects,areas,scores,text
 
 def unique(objects):
     elements = []
@@ -42,10 +54,11 @@ def unique(objects):
         elements =list(set(elements).union(set(obj)))
     return elements
 
-def remove_hard(objects,areas,scores):
+def remove_hard(objects,areas,scores,text):
     objects_new = copy.deepcopy(objects) 
     areas_new = copy.deepcopy(areas)
     scores_new = copy.deepcopy(scores)
+    text_new = copy.deepcopy(text)
     index = []
     count = 0
     for i,obj in enumerate(objects):
@@ -53,11 +66,11 @@ def remove_hard(objects,areas,scores):
             del objects_new[i-count]
             del areas_new[i-count]
             del scores_new[i-count]
+            np.delete(text_new,i-count)
             count += 1
             index.append(i)
-    #print(objects_new)
             
-    return objects_new,areas_new,scores_new,index
+    return objects_new,areas_new,scores_new,text_new,index
             
 def remove_labels(index,labels):
     labels_new = copy.deepcopy(labels)
@@ -66,7 +79,7 @@ def remove_labels(index,labels):
     return labels_new
 
 
-def cal_idf(objects,elements):
+def cal_idf(objects,elements,text):
     obj_unique = unique(objects)
     document = len(objects)
     def f(x,y):
@@ -75,6 +88,8 @@ def cal_idf(objects,elements):
         else:
             return x+len(y)
     words = reduce(f,objects)
+    
+    text_no = np.count_nonzero(text)
     
     # idf和iwf原始实现
     word_count = np.zeros([len(obj_unique)])
@@ -124,16 +139,17 @@ def cal_idf(objects,elements):
             else:
                 wc_t[8] += word_count[i]
                 dc_t[8] += document_count[i]
+            wc_t[9] = dc_t[9] = text_no
     
     # calculate
     idf = [math.log(words/(x+1)) for x in wc_t]
     iwf = [math.log(document/(x+1)) for x in dc_t]
-    print(idf,iwf)
+    #print(idf,iwf)
     return idf,iwf
     
-def get_vectors(objects,elements,areas,scores):
+def get_vectors(objects,elements,areas,scores,text):
     vectors = np.zeros((len(objects),len(elements)))
-    idf,iwf = cal_idf(objects, elements)
+    idf,iwf = cal_idf(objects, elements,text)
     for i,obj in enumerate(objects):
         for index,j in enumerate(obj):
             # person
@@ -162,6 +178,7 @@ def get_vectors(objects,elements,areas,scores):
                 vectors[i][7] += areas[i][index]*scores[i][index]*idf[7]
             else:
                 vectors[i][8] += areas[i][index]*scores[i][index]*idf[8]
+            vectors[i][9] = text[i] * idf[9]
     return vectors
 
 def normalize(vectors):
@@ -174,5 +191,6 @@ def normalize(vectors):
 def normalization(data):
     _range = np.max(data) - np.min(data)
     return (data - np.min(data)) / _range
+
 
 
