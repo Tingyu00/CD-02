@@ -7,28 +7,33 @@ Created on Sun Jul 18 14:36:15 2021
 import re
 import numpy as np
 import copy
+from functools import reduce
+import math
+categories=['animal','animation','dance','fashion','food','game','kichiku','knowledge','life','music','tech']
 
-def read_features(num_pictures):
+def read_features(num_pictures,cats):
     objects = [];areas = [];scores=[]
-    with open ('./result/classes.txt','r') as f:
-        for i in range(num_pictures):
-            match = re.findall(r'\d+', f.readline())
-            objects.append(list(map(int,match)))
-    f.close()
-    with open('./result/areas.txt','r') as f:
-        for i in range(num_pictures):
-            # calculate relative areas of boxes
-            match = re.findall(r"\d+\.?\d*", f.readline()) 
-            b = list(map(float,match))
-            b = [x /(416*416) for x in b]
-            areas.append(b)
-    f.close()
-    with open ('./result/scores.txt','r') as f:
-        for i in range(num_pictures):
-            #print(f.readline())
-            match = re.findall(r"\d+\.?\d*", f.readline())
-            scores.append(list(map(float,match)))
-    f.close() 
+    for cat in cats:
+        pos = categories.index(cat)
+        with open ('./result/classes.txt','r') as f1:
+            for line in f1.readlines()[pos*100:pos*100+num_pictures]:
+                match = re.findall(r'\d+', line)
+                objects.append(list(map(int,match)))    
+        with open('./result/areas.txt','r') as f2:
+            for line in f2.readlines()[pos*100:pos*100+num_pictures]:
+                # calculate relative areas of boxes
+                match = re.findall(r"\d+\.?\d*",line) 
+                b = list(map(float,match))
+                b = [x /(416*416) for x in b]
+                areas.append(b)    
+        with open ('./result/scores.txt','r') as f3:
+            for line in f3.readlines()[pos*100:pos*100+num_pictures]:
+                #print(f.readline())
+                match = re.findall(r"\d+\.?\d*", line)
+                scores.append(list(map(float,match)))      
+    f1.close()
+    f2.close()
+    f3.close()
     return objects,areas,scores
 
 def unique(objects):
@@ -60,37 +65,103 @@ def remove_labels(index,labels):
         del labels_new[ix-i]
     return labels_new
 
-def get_vectors(objects,elements,areas,scores):
-    vectors = np.zeros((len(objects),len(elements)))
-    for i,obj in enumerate(objects):
-        for index,j in enumerate(obj):
-            #print(len(objects[i]),len(areas[i]),len(scores[i]),scores[i])
+
+def cal_idf(objects,elements):
+    obj_unique = unique(objects)
+    document = len(objects)
+    def f(x,y):
+        if type(x)==type(y):
+            return len(x)+len(y)
+        else:
+            return x+len(y)
+    words = reduce(f,objects)
+    
+    # idf和iwf原始实现
+    word_count = np.zeros([len(obj_unique)])
+    document_count = np.zeros([len(obj_unique)])
+    for obj in objects:
+        uni = list(set(obj))
+        for i in uni:
+            word_count[obj_unique.index(i)] += obj.count(i)
+            document_count[obj_unique.index(i)] += 1
+    
+    # merge the labels        
+    wc_t = np.zeros([len(elements)])
+    dc_t = np.zeros([len(elements)])
+    for i,j in enumerate(obj_unique):
             # person
             if j==0 : 
-                vectors[i][0] += areas[i][index]*scores[i][index]
+                wc_t[0] += word_count[i]
+                dc_t[0] += document_count[i]
             # traffic
             elif j>1 and j<14:
-                vectors[i][1] += areas[i][index]*scores[i][index]
+                wc_t[1] += word_count[i]
+                dc_t[1] += document_count[i]
             # animal
             elif j>=14 and j<24 :
-                vectors[i][2] += areas[i][index]*scores[i][index]
+                wc_t[2] += word_count[i]
+                dc_t[2] += document_count[i]
             # package
             elif j>=24 and j<28 :
-                vectors[i][3] += areas[i][index]*scores[i][index]  
+                wc_t[3] += word_count[i]
+                dc_t[3] += document_count[i]  
             # sports
             elif j>=28 and j<39 :
-                vectors[i][4] += areas[i][index]*scores[i][index]
+                wc_t[4] += word_count[i]
+                dc_t[4] += document_count[i]
             # food and cookware and tableware
             elif (j>=39 and j<56) or( j>=68 and j<73) :
-                vectors[i][5] += areas[i][index]*scores[i][index]
+                wc_t[5] += word_count[i]
+                dc_t[5] += document_count[i]
             # furniture
             elif j>=56 and j< 62  :
-                vectors[i][6] += areas[i][index]*scores[i][index]
+                wc_t[6] += word_count[i]
+                dc_t[6] += document_count[i]
             # tech
             elif j>=62 and j<68 :
-                vectors[i][7] += areas[i][index]*scores[i][index]
+                wc_t[7] += word_count[i]
+                dc_t[7] += document_count[i]
             else:
-                vectors[i][8] += areas[i][index]*scores[i][index]
+                wc_t[8] += word_count[i]
+                dc_t[8] += document_count[i]
+    
+    # calculate
+    idf = [math.log(words/(x+1)) for x in wc_t]
+    iwf = [math.log(document/(x+1)) for x in dc_t]
+    print(idf,iwf)
+    return idf,iwf
+    
+def get_vectors(objects,elements,areas,scores):
+    vectors = np.zeros((len(objects),len(elements)))
+    idf,iwf = cal_idf(objects, elements)
+    for i,obj in enumerate(objects):
+        for index,j in enumerate(obj):
+            # person
+            if j==0 : 
+                vectors[i][0] += areas[i][index]*scores[i][index]*idf[0]
+            # traffic
+            elif j>1 and j<14:
+                vectors[i][1] += areas[i][index]*scores[i][index]*idf[1]
+            # animal
+            elif j>=14 and j<24 :
+                vectors[i][2] += areas[i][index]*scores[i][index]*idf[2]
+            # package
+            elif j>=24 and j<28 :
+                vectors[i][3] += areas[i][index]*scores[i][index] *idf[3] 
+            # sports
+            elif j>=28 and j<39 :
+                vectors[i][4] += areas[i][index]*scores[i][index]*idf[4]
+            # food and cookware and tableware
+            elif (j>=39 and j<56) or( j>=68 and j<73) :
+                vectors[i][5] += areas[i][index]*scores[i][index]*idf[5]
+            # furniture
+            elif j>=56 and j< 62  :
+                vectors[i][6] += areas[i][index]*scores[i][index]*idf[6]
+            # tech
+            elif j>=62 and j<68 :
+                vectors[i][7] += areas[i][index]*scores[i][index]*idf[7]
+            else:
+                vectors[i][8] += areas[i][index]*scores[i][index]*idf[8]
     return vectors
 
 def normalize(vectors):
@@ -103,6 +174,5 @@ def normalize(vectors):
 def normalization(data):
     _range = np.max(data) - np.min(data)
     return (data - np.min(data)) / _range
-    
 
 
